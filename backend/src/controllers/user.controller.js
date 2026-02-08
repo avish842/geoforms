@@ -124,6 +124,7 @@ const verifyOTP=asyncHandler(async(req,res)=>{
     const Options = {
         httpOnly: true,
         secure: true,
+        sameSite: "none",
     };
 
     return res.status(201)
@@ -165,6 +166,7 @@ const loginUser=asyncHandler(async(req,res)=>{
     const Options={
         httpOnly:true,
         secure:true,
+        sameSite:"none",
     }
     res.status(200)
     .cookie("refreshToken",refreshToken,Options)// Set the refresh token in an HTTP-only se
@@ -195,6 +197,7 @@ const logoutUser=asyncHandler(async(req,res)=>{
     const Options={
         httpOnly:true,
         secure:true,
+        sameSite:"none",
     }
 
     res.status(200)
