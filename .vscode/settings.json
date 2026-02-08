@@ -1,0 +1,26 @@
+{
+	"actionButtons": {
+		"commands": [
+			{
+				"name":"Frontend 🧑‍💻",
+				"command":"cd .\\frontend\\; npm run dev",
+				"singleInstance": true,
+				"focus": true,
+				"color": "cyan"
+			},
+			{
+				"name":"Backend 🗄️",
+				"command":"cd .\\backend\\; npm run dev",
+				"singleInstance": true,
+				"focus": true,
+				"color": "magenta"
+			}
+		],
+		"defaultColor": "white",
+		"loadNpmCommands": false,
+		"reloadButton":"♻️",
+		
+		
+
+	}
+}
