@@ -22,8 +22,8 @@ const connectDB=async()=>{
         return cached.conn;
     } catch(error) {
         cached.promise = null;
-        console.log("Error connecting to the database:", error);
-        process.exit(1);
+        console.error("Error connecting to the database:", error);
+        throw error;
     }
 }
 
