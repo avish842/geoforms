@@ -1,13 +1,19 @@
 import {Resend} from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend;
+const getResend = () => {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+};
 
 export const sendOTPEmail = async (to, otp) => {
   const digits = otp.toString().split("").map(
     (d) => `<td style="width:40px;height:48px;background:#4F46E5;border-radius:8px;text-align:center;font-size:22px;font-weight:700;color:#fff;font-family:monospace;">${d}</td>`
   ).join('<td style="width:6px"></td>');
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: "GeoFence <noreply@geoforms.in>",
     to,
     subject: "Your GeoFence Verification Code",
