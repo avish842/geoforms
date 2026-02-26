@@ -119,5 +119,13 @@ const updateForm=asyncHandler(async(req,res)=>{
 
 
 })
+const fetchUserForms=asyncHandler(async(req,res)=>{
+    const userId=req.user._id;
+    const forms=await Form.find({ownerId:userId}).select("title description createdAt updatedAt");
 
-export {createForm, getForm, getFormPublic, updateForm  }; 
+    return res.status(200).json(
+        new ApiResponse(200,forms,"User forms fetched successfully")
+    );
+});
+
+export {createForm, getForm, getFormPublic, updateForm, fetchUserForms}; 

@@ -78,8 +78,7 @@ const Home = () => {
             <span className="text-xs text-gray-500 ml-[5px] mt-[20px]">By NITian</span>
           </h1>
 
-          {/* <button className="  hover:bg-indigo-100 px-3 sm:px-4 py-1 sm:py-2  rounded-lg transition-all duration-200 " onClick={() => navigate("/create-form")}>Create Form</button> */}
-
+          <button className=" border-amber-500" onClick={() => navigate("/forms")}>My Form</button>
 
           <div className="flex items-center space-x-0.5">
             <div >

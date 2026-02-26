@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const FIELD_TYPES = [
     { value: "text", label: "Text" },
@@ -38,6 +38,7 @@ const CreateForm = () => {
         allowedFileTypes: [],
     });
     const { formId } = useParams();
+    const navigate = useNavigate();
     const isFirstRender = useRef(true);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
@@ -177,9 +178,34 @@ const CreateForm = () => {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-b from-slate-50 to-blue-50 py-12 px-4 sm:px-6">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 py-12 px-4 sm:px-6">
+            <header className="mb-10 border-amber-600 border-2 rounded-xl p-6 bg-white shadow-sm">
+                  
+                   <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => navigate(`/form/${formId}/settings`)}
+                        className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-blue-600 bg-neutral-100 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Settings
+                    </button>
+                    <button
+                        onClick={() => navigate(`/form/${formId}/responses`)}
+                        className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-emerald-600 bg-neutral-100 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Responses
+                    </button>
+                   </div>
+           </header>
 
             <div className="max-w-3xl mx-auto">
+                
 
                 {/* ── Title & Description ── */}
                 <div className="mb-10 bg-white rounded-xl border-2 border-blue-200 p-6 shadow-sm">

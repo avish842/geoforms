@@ -1,20 +1,14 @@
-import nodemailer from "nodemailer";
+import {Resend} from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendOTPEmail = async (to, otp) => {
   const digits = otp.toString().split("").map(
     (d) => `<td style="width:40px;height:48px;background:#4F46E5;border-radius:8px;text-align:center;font-size:22px;font-weight:700;color:#fff;font-family:monospace;">${d}</td>`
   ).join('<td style="width:6px"></td>');
 
-  await transporter.sendMail({
-    from: `"GeoFence" <${process.env.EMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: "GeoFence <noreply@geoforms.in>",
     to,
     subject: "Your GeoFence Verification Code",
     html: `
@@ -41,4 +35,11 @@ export const sendOTPEmail = async (to, otp) => {
     </body>
     `,
   });
+
+  if (error) {
+    console.error("Resend email error:", error);
+    throw new Error(`Failed to send OTP email: ${error.message}`);
+  }
+
+  console.log("OTP email sent successfully:", data?.id);
 };

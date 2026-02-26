@@ -12,6 +12,8 @@ const FillForm = () => {
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState(null);
+    const [fileUploads, setFileUploads] = useState({});   // { fieldId: attachment }
+    const [uploading, setUploading] = useState({});       // { fieldId: boolean }
 
     /* ─── Fetch form on mount ─── */
     useEffect(() => {
@@ -59,6 +61,52 @@ const FillForm = () => {
         });
     };
 
+    const handleFileUpload = async (fieldId, file) => {
+        if (!file) return;
+
+        setUploading((prev) => ({ ...prev, [fieldId]: true }));
+        setError(null);
+
+        // Get old attachment ID if replacing an existing file
+        const oldAttachmentId = fileUploads[fieldId]?._id || null;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("fieldId", fieldId);
+        formData.append("formId", formId);
+        if (oldAttachmentId) {
+            formData.append("oldAttachmentId", oldAttachmentId);
+        }
+
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/v1/user/upload`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    body: formData,
+                }
+            );
+
+            const data = await res.json();
+
+            if (res.ok && data.attachment) {
+                setFileUploads((prev) => ({ ...prev, [fieldId]: data.attachment }));
+                updateAnswer(fieldId, {
+                    attachmentId: data.attachment._id,
+                    url: data.attachment.url,
+                    filename: data.attachment.filename,
+                });
+            } else {
+                setError(data.message || "Failed to upload file. Please try again.");
+            }
+        } catch {
+            setError("Network error. Please try uploading the file again.");
+        } finally {
+            setUploading((prev) => ({ ...prev, [fieldId]: false }));
+        }
+    };
+
     /* ─── Submit ─── */
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -84,6 +132,10 @@ const FillForm = () => {
         }
 
         // Get location if geofence is configured
+
+    
+
+
         let location = null;
         if (form.settings?.geofence?.type) {
             try {
@@ -223,15 +275,61 @@ const FillForm = () => {
 
             case "file":
                 return (
-                    <div className="mt-1 border-2 border-dashed border-blue-200 rounded-lg py-6 flex flex-col items-center gap-2 text-neutral-400 hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-3 3m3-3l3 3M4 18h16" />
-                        </svg>
-                        <span className="text-sm">Upload file</span>
-                        <input
-                            type="file"
-                            className="hidden"
-                        />
+                    <div className="mt-1">
+                        <label
+                            htmlFor={`file-input-${field.id}`}
+                            className={`border-2 border-dashed rounded-lg py-6 flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                                uploading[field.id]
+                                    ? "border-yellow-300 bg-yellow-50/50 text-yellow-500 pointer-events-none"
+                                    : fileUploads[field.id]
+                                    ? "border-green-300 bg-green-50/50 text-green-500 hover:border-green-400"
+                                    : "border-blue-200 text-neutral-400 hover:border-blue-400 hover:bg-blue-50/50"
+                            }`}
+                        >
+                            {uploading[field.id] ? (
+                                <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="w-6 h-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={1.5}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 16V4m0 0l-3 3m3-3l3 3M4 18h16"
+                                    />
+                                </svg>
+                            )}
+
+                            <span className="text-sm">
+                                {uploading[field.id]
+                                    ? "Uploading..."
+                                    : fileUploads[field.id]
+                                    ? fileUploads[field.id].filename
+                                    : "Upload file"}
+                            </span>
+
+                            <input
+                                type="file"
+                                id={`file-input-${field.id}`}
+                                className="hidden"
+                                disabled={uploading[field.id]}
+                                onChange={(e) => handleFileUpload(field.id, e.target.files[0])}
+                            />
+                        </label>
+
+                        {fileUploads[field.id] && !uploading[field.id] && (
+                            <p className="mt-1.5 text-xs text-green-500 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Uploaded — click to replace
+                            </p>
+                        )}
                     </div>
                 );
 

@@ -125,7 +125,7 @@ const verifyOTP=asyncHandler(async(req,res)=>{
         httpOnly: true,
         secure: true,
         sameSite: "none",
-    };
+    }; 
 
     return res.status(201)
         .cookie("refreshToken", refreshToken, Options)

@@ -5,11 +5,10 @@ import mongoose from "mongoose" ;
 const attachmentSchema = new mongoose.Schema({
 
 
-  uploaderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  responseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Response' },
-  
-  
   formId: { type: mongoose.Schema.Types.ObjectId, ref: 'Form' },
+  responseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Response' },
+  uploaderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  fieldId: String, // 
   
   filename: String,
   url: String,

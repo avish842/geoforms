@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import { Form } from "../models/form.model.js";
 
 
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createResponse= asyncHandler(async (req,res)=>{
     const session=await mongoose.startSession();
@@ -199,4 +200,49 @@ const createResponse= asyncHandler(async (req,res)=>{
 
 });
 
-export {createResponse}
+const uploadAttachment=asyncHandler(async(req,res)=>{
+    const file=req.files?.file[0]?.path;
+
+    console.log(file)
+
+    if(!file){
+        throw new ApiError(400,"No file uploaded");
+    }
+
+    const fileUrl=await uploadOnCloudinary(file);
+
+    if(!fileUrl){
+        throw new ApiError(500,"Failed to upload file");
+    }
+    res.status(200).json(
+        new ApiResponse(200,"File uploaded successfully",{
+            url:fileUrl.url,
+            cloudinaryPublicId:fileUrl.public_id,
+            filename:req.files.file[0].originalname,
+            size:req.files.file[0].size,    
+            mimeType:req.files.file[0].mimetype
+        })
+    );  
+});
+
+const getResponses = asyncHandler(async (req, res) => {
+    const { formId } = req.params;
+    const userId = req.user._id;
+
+    // Verify the logged-in user owns this form
+    const form = await Form.findOne({ _id: formId, ownerId: userId });
+    if (!form) {
+        throw new ApiError(404, "Form not found or you don't have permission");
+    }
+
+    const responses = await Response.find({ formId })
+        .sort({ createdAt: -1 })
+        .populate("attachments")
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, responses, "Responses fetched successfully")
+    );
+});
+
+export {createResponse, uploadAttachment, getResponses}
