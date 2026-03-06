@@ -42,6 +42,12 @@ const userSchema = new Schema(
     emailOtpExpiry: {
       type: Date,
     },
+    passwordResetOtp: {
+      type: String,
+    },
+    passwordResetOtpExpiry: {
+      type: Date,
+    },
     avatar: {
       type: String,
     },  

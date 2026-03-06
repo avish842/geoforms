@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import RegisterUser from "./pages/RegisterUser";
 import Profile from './pages/Profile';
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import CreateForm from "./pages/CreateForm";
 import FillForm from "./pages/FillForm";
 import { MyForms } from "./pages/Forms";
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<RegisterUser />} />
         <Route path ='/login' element={<Login/>}/>
+        <Route path='/forgot-password' element={<ForgotPassword/>}/>
         <Route path="/profile" element={<Profile />} />
         <Route path="/form/:formId/edit" element={<CreateForm />} />
         <Route path="/form/:formId/fill" element={<FillForm />} />

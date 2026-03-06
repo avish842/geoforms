@@ -220,4 +220,89 @@ const getUserProfile=asyncHandler(async(req,res)=>{
     )
 
 });
-export {loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP};
+const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email || email.trim() === "") {
+        throw new ApiError(400, "Email is required");
+    }
+
+    const user = await User.findOne({ email, isEmailVerified: true });
+    if (!user) {
+        throw new ApiError(404, "No account found with this email");
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+    user.passwordResetOtp = otp;
+    user.passwordResetOtpExpiry = otpExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    await sendOTPEmail(email, otp);
+
+    return res.status(200).json(
+        new ApiResponse(200, { email }, "Password reset OTP sent successfully")
+    );
+});
+
+const verifyResetOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        throw new ApiError(400, "Email and OTP are required");
+    }
+
+    const user = await User.findOne({ email, isEmailVerified: true });
+    if (!user) {
+        throw new ApiError(404, "No account found with this email");
+    }
+
+    if (!user.passwordResetOtp || user.passwordResetOtpExpiry < new Date()) {
+        throw new ApiError(400, "OTP has expired. Please request a new one.");
+    }
+
+    if (user.passwordResetOtp !== otp) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, { email, verified: true }, "OTP verified successfully")
+    );
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        throw new ApiError(400, "Email, OTP, and new password are required");
+    }
+
+    if (newPassword.trim().length < 6) {
+        throw new ApiError(400, "Password must be at least 6 characters");
+    }
+
+    const user = await User.findOne({ email, isEmailVerified: true });
+    if (!user) {
+        throw new ApiError(404, "No account found with this email");
+    }
+
+    if (!user.passwordResetOtp || user.passwordResetOtpExpiry < new Date()) {
+        throw new ApiError(400, "OTP has expired. Please request a new one.");
+    }
+
+    if (user.passwordResetOtp !== otp) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    user.password = newPassword;
+    user.passwordResetOtp = undefined;
+    user.passwordResetOtpExpiry = undefined;
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Password reset successfully")
+    );
+});
+
+export { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword };

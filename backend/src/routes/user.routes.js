@@ -1,5 +1,5 @@
 import { upload } from "../middlewares/multer.middleware.js";
-import { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword } from "../controllers/user.controller.js";
 import { createForm, getForm, getFormPublic, updateForm,fetchUserForms } from "../controllers/form.controller.js";
 import { createResponse } from "../controllers/response.controller.js";
 import { getResponses } from "../controllers/response.controller.js";
@@ -15,6 +15,10 @@ const router = Router();
 
 router.route("/auth/generate-otp").post(generateOTP); // Generate OTP route
 router.route("/auth/verify-otp").post(verifyOTP);     // Verify OTP route
+
+router.route("/auth/forgot-password").post(forgotPassword); // Forgot password - send OTP
+router.route("/auth/verify-reset-otp").post(verifyResetOTP); // Verify reset OTP
+router.route("/auth/reset-password").post(resetPassword); // Reset password
 
 router.route("/login").post(loginUser); // Login user route
 router.route("/logout").post(verifyJWT,logoutUser); // Logout user route
