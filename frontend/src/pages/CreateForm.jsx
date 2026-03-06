@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useDrawingContext } from "../map_comp/context/DrawingContext";
 
 const FIELD_TYPES = [
     { value: "text", label: "Text" },
@@ -16,6 +17,7 @@ const FIELD_TYPES = [
 const OPTION_TYPES = ["multiple choice", "checkbox", "radio"];
 
 const CreateForm = () => {
+
     const [page, setPage] = useState("Form");
     const [formTitle, setFormTitle] = useState("");
     const [formDescription, setFormDescription] = useState("");
@@ -42,6 +44,9 @@ const CreateForm = () => {
     const isFirstRender = useRef(true);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+
+    //for the geofence settings
+    const { state,userLocation } = useDrawingContext();
 
     const fillLink = `${window.location.origin}/form/${formId}/fill`;
 
@@ -85,10 +90,13 @@ const CreateForm = () => {
         }
         if (loading) return;
         const timer=setTimeout(()=>{
+            console.log("state", state);
             autoSave();
         }, 1000);
         return ()=>clearTimeout(timer);
-     }, [formTitle,formDescription,fields]);
+     }, [formTitle,formDescription,fields,state]);
+    
+
 
     const autoSave=async ()=>{
         console.log("Auto-saving form data...");

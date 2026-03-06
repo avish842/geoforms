@@ -71,7 +71,7 @@ const Home = () => {
       <header className="bg-white shadow-md py-4 px-4 sm:px-6">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-indigo-700 flex items-center">
-            <img src="/logo.svg" alt="AvishForms Logo" className="h-10 w-10 mr-3" />
+            <img src="/logo.svg" alt="GeoForms Logo" className="h-10 w-10 mr-3" />
             <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
               {APP_NAME}
             </span>

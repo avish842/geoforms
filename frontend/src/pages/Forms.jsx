@@ -10,6 +10,16 @@ export const MyForms = () => {
     useEffect(() => {
         const fetchForms = async () => {
             try {
+                // Check if user is logged in first
+                const authRes = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/v1/user/profile`,
+                    { credentials: "include" }
+                );
+                if (!authRes.ok) {
+                    navigate("/login");
+                    return;bb
+                }
+
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/v1/user/forms`,
                     { credentials: "include" }
@@ -27,7 +37,7 @@ export const MyForms = () => {
             }
         };
         fetchForms();
-    }, []);
+    }, [navigate]);
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "—";
@@ -67,7 +77,7 @@ export const MyForms = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-10 px-4 sm:px-6">
             <header className="mb-10">
                 <h1 className="text-3xl font-bold text-indigo-700 flex items-center justify-center">
-                    <img src="/logo.svg" alt="AvishForms Logo" className="h-10 w-10 mr-3" />
+                    <img src="/logo.svg" alt="GeoForms Logo" className="h-10 w-10 mr-3" />
                     <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
                         My Forms
                     </span>

@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import MapsComp from "../map_comp/MapsComp";
+import { useDrawingContext } from "../map_comp/context/DrawingContext";
+
 
 const Section = ({ title, children }) => (
     <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 shadow-sm">
@@ -41,7 +44,8 @@ const FormSetting = () => {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState(null);
-
+    const { state,userLocation } = useDrawingContext();
+ 
     /* ─── Fetch form ─── */
     useEffect(() => {
         const fetchForm = async () => {
@@ -79,6 +83,68 @@ const FormSetting = () => {
         };
         fetchForm();
     }, [formId]);
+
+    useEffect(() => {
+        if(state.now.length > 0){
+            if(state.now[0]?.type === "rectangle"){
+                const { north, south, east, west } = state.now[0]?.snapshot?.bounds
+
+                const coordinates = [[
+                [west, south],   // SW corner
+                [east, south],   // SE corner
+                [east, north],   // NE corner
+                [west, north],   // NW corner
+                [west, south],   // close the ring (first point repeated)
+                ]]
+
+                updateSetting("geofence",{
+                    type:"Polygon",
+                    coordinates: coordinates,     
+                    radius: null
+                });
+
+            }
+            else if (state.now[0]?.type === "circle"){
+                const center = state.now[0]?.snapshot?.center;
+                const radius = state.now[0]?.snapshot?.radius;
+                
+                updateSetting("geofence",{
+                    type:"Point",
+                    coordinates: [center.lng, center.lat],   // GeoJSON: [lng, lat]
+                    radius: radius
+                });
+            }
+            else if (state.now[0]?.type === "polygon"){
+                const path = state.now[0]?.snapshot?.path || [];
+                const coords = path.map((point) => {
+                    // Handle both LatLng objects and plain {lat, lng}
+                    const lat = typeof point.lat === "function" ? point.lat() : point.lat;
+                    const lng = typeof point.lng === "function" ? point.lng() : point.lng;
+                    return [lng, lat]; // GeoJSON: [lng, lat]
+                });
+                // Close the ring if not already closed
+                if (coords.length > 0 &&
+                    (coords[0][0] !== coords[coords.length-1][0] ||
+                     coords[0][1] !== coords[coords.length-1][1])) {
+                    coords.push(coords[0]);
+                }
+                updateSetting("geofence",{
+                    type:"Polygon",
+                    coordinates: [coords],
+                    radius: null
+                });
+            }
+            else{
+                updateSetting("geofence",{
+                    type: null,
+                    coordinates: [],    
+                    radius: null
+                });
+
+            }
+        }
+    }, [state.now]);
+
 
     /* ─── Save ─── */
     const handleSave = async () => {
@@ -160,6 +226,12 @@ const FormSetting = () => {
         return local.toISOString().slice(0, 16);
     };
 
+   
+
+    const clearFence = () => {
+        updateSetting("geofence", { type: null, coordinates: [], radius: null });
+    };
+
     /* ─── Loading ─── */
     if (loading) {
         return (
@@ -221,6 +293,13 @@ const FormSetting = () => {
                         checked={form.isActive}
                         onChange={(val) => setForm((prev) => ({ ...prev, isActive: val }))}
                     />
+                </Section>
+
+                {/* ── Geofence Settings ── */}
+                <Section title="Geofence Settings">
+                    <div className="w-full h-[500px] rounded-md overflow-hidden">
+                        <MapsComp />
+                    </div>  
                 </Section>
 
                 {/* ── Email Domain Whitelist ── */}

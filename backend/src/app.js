@@ -4,10 +4,9 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(s => s.trim()) || [];
-
 app.use(cors({
   origin: function (origin, callback) {
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(s => s.trim()) || [];
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

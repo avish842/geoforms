@@ -12,7 +12,6 @@ const createForm=asyncHandler(async(req,res)=>{
         settings={}    }=req.body;
 
     const ownerId=req.user._id;
-    console.log("Owner ID from token:", ownerId);
 
     if(!ownerId){
         throw new ApiError(400,"Owner ID is required to create form");
@@ -26,7 +25,6 @@ const createForm=asyncHandler(async(req,res)=>{
         settings           
     })
 
-    console.log("forms data:",form)
     if(!form){
         throw new ApiError(500,"Failed to create form");
     }
@@ -78,16 +76,34 @@ const updateForm=asyncHandler(async(req,res)=>{
 
     const {title,description,fields,settings} =req.body;
 
-    console.log("Updating form with ID:", formId);
-    console.log("User ID from token:", req.user._id);
-    console.log("Update data:", {title, description, fields, settings});
+    // Build $set dynamically so we only touch fields that were actually sent
+    const updateFields = {};
+    if (title !== undefined)       updateFields.title = title;
+    if (description !== undefined) updateFields.description = description;
+    if (fields !== undefined)      updateFields.fields = fields;
 
-    // Strip empty/invalid geofence so the 2dsphere index isn't triggered on junk data
-    if (settings?.geofence) {
-        const gf = settings.geofence;
-        if (!gf.type || !gf.coordinates || (Array.isArray(gf.coordinates) && gf.coordinates.length === 0)) {
-            delete settings.geofence;
+    // Merge settings with dot-notation so partial updates don't wipe sibling keys
+    if (settings) {
+        if (settings.geofence !== undefined) {
+            const gf = settings.geofence;
+            // Strip empty/invalid geofence so the 2dsphere index isn't triggered on junk
+            if (gf && gf.type && gf.coordinates &&
+                !(Array.isArray(gf.coordinates) && gf.coordinates.length === 0)) {
+                updateFields["settings.geofence"] = gf;
+            } else {
+                updateFields["settings.geofence"] = undefined; // clear it
+            }
         }
+        if (settings.emailDomainWhitelist !== undefined)
+            updateFields["settings.emailDomainWhitelist"] = settings.emailDomainWhitelist;
+        if (settings.submissionLimitPerUser !== undefined)
+            updateFields["settings.submissionLimitPerUser"] = settings.submissionLimitPerUser;
+        if (settings.timeWindow !== undefined)
+            updateFields["settings.timeWindow"] = settings.timeWindow;
+        if (settings.maxFileSizeMB !== undefined)
+            updateFields["settings.maxFileSizeMB"] = settings.maxFileSizeMB;
+        if (settings.allowedFileTypes !== undefined)
+            updateFields["settings.allowedFileTypes"] = settings.allowedFileTypes;
     }
 
     const form=await Form.findOneAndUpdate(
@@ -95,20 +111,12 @@ const updateForm=asyncHandler(async(req,res)=>{
             _id:formId,
             ownerId:req.user._id
         },
-        {
-            $set:{
-                title,
-                description,
-                fields,
-                settings
-            }
-        },
+        { $set: updateFields },
         {
             new:true,
             runValidators:true
         }
     )
-    console.log("Updated form");
     if(!form){
         throw new ApiError(404,"Form not found or you don't have permission to edit");
     }

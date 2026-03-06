@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+
 const FillForm = () => {
     const { formId } = useParams();
     const navigate = useNavigate();
@@ -14,6 +15,11 @@ const FillForm = () => {
     const [error, setError] = useState(null);
     const [fileUploads, setFileUploads] = useState({});   // { fieldId: attachment }
     const [uploading, setUploading] = useState({});       // { fieldId: boolean }
+
+    // Geofence location gating
+    const [locationStatus, setLocationStatus] = useState("idle"); // idle | requesting | granted | denied | unavailable
+    const [userLocation, setUserLocation] = useState(null);
+    const isGeofenced = !!(form?.settings?.geofence?.type);
 
     /* ─── Fetch form on mount ─── */
     useEffect(() => {
@@ -43,6 +49,44 @@ const FillForm = () => {
         };
         fetchForm();
     }, [formId]);
+
+    /* ─── Geofence: request location as soon as form loads ─── */
+    useEffect(() => {
+        if (!form) return;
+        const gf = form.settings?.geofence;
+        if (!gf?.type) return; // not geofenced, skip
+
+        setLocationStatus("requesting");
+
+        if (!navigator.geolocation) {
+            setLocationStatus("unavailable");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setLocationStatus("granted");
+            },
+            (err) => {
+                console.error("Geolocation error:", err);
+                setLocationStatus("denied");
+            },
+            { enableHighAccuracy: true, timeout: 15000 }
+        );
+    }, [form]);
+
+    const retryLocation = () => {
+        setLocationStatus("requesting");
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setLocationStatus("granted");
+            },
+            () => setLocationStatus("denied"),
+            { enableHighAccuracy: true, timeout: 15000 }
+        );
+    };
 
     /* ─── Helpers ─── */
     const updateAnswer = (fieldId, value) => {
@@ -131,26 +175,15 @@ const FillForm = () => {
             }
         }
 
-        // Get location if geofence is configured
-
-    
-
-
+        // Use already-tracked location for geofenced forms
         let location = null;
-        if (form.settings?.geofence?.type) {
-            try {
-                const pos = await new Promise((resolve, reject) =>
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                    })
-                );
-                location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            } catch {
-                setError("Location access is required to submit this form.");
+        if (isGeofenced) {
+            if (!userLocation) {
+                setError("Location access is required to submit this geofenced form.");
                 setSubmitting(false);
                 return;
             }
+            location = userLocation;
         }
 
         try {
@@ -382,6 +415,54 @@ const FillForm = () => {
                     </div>
                     <h2 className="text-2xl font-semibold text-neutral-800 mb-2">Response submitted!</h2>
                     <p className="text-neutral-500">Thank you for filling out this form.</p>
+                </div>
+            </div>
+        );
+    }
+
+    /* ─── Geofence: Location gate ─── */
+    if (isGeofenced && locationStatus !== "granted") {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
+                <div className="bg-white rounded-xl border-2 border-amber-200 p-8 max-w-md w-full text-center shadow-sm">
+                    <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-semibold text-neutral-800 mb-2">Location Required</h2>
+                    <p className="text-neutral-500 text-sm mb-5">
+                        This form uses geofencing. You must enable location access to fill it out.
+                    </p>
+
+                    {locationStatus === "requesting" && (
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm text-neutral-400">Requesting location access...</p>
+                        </div>
+                    )}
+
+                    {locationStatus === "denied" && (
+                        <div className="space-y-3">
+                            <p className="text-sm text-red-500">
+                                Location permission was denied. Please allow location access in your browser settings and try again.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={retryLocation}
+                                className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-2.5 rounded-xl transition-colors text-sm"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    )}
+
+                    {locationStatus === "unavailable" && (
+                        <p className="text-sm text-red-500">
+                            Geolocation is not supported by your browser. Please use a different browser to fill this form.
+                        </p>
+                    )}
                 </div>
             </div>
         );

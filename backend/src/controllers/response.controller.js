@@ -90,18 +90,19 @@ const createResponse= asyncHandler(async (req,res)=>{
                     }
                 }).session(session);
             } else if(form.settings.geofence.type === "Point" && form.settings.geofence.radius){
-                // For Point (Circle): check if point is within radius
-                const centerCoords = form.settings.geofence.coordinates; // [lng, lat]
-                const radiusInRadians = form.settings.geofence.radius / 6378137; // Earth's radius in meters
-                
-                isInsideGeofence = await Form.findOne({
-                    _id: formId,
-                    "settings.geofence.coordinates": {
-                        $geoWithin: {
-                            $centerSphere: [centerCoords, radiusInRadians]
-                        }
-                    }
-                }).session(session);
+                // For Point (Circle): check if user's location is within radius
+                // Using Haversine formula since $centerSphere can't check external points
+                const [centerLng, centerLat] = form.settings.geofence.coordinates;
+                const R = 6378137; // Earth's radius in meters
+                const dLat = (location.lat - centerLat) * Math.PI / 180;
+                const dLng = (location.lng - centerLng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(centerLat * Math.PI / 180) * Math.cos(location.lat * Math.PI / 180) *
+                          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c; // distance in meters
+
+                isInsideGeofence = distance <= form.settings.geofence.radius;
             }
 
             if(!isInsideGeofence){

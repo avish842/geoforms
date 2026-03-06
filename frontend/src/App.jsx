@@ -8,9 +8,11 @@ import FillForm from "./pages/FillForm";
 import { MyForms } from "./pages/Forms";
 import FormSetting from "./pages/FormSetting";
 import Responses from "./pages/Responses";
+import { DrawingProvider } from "./map_comp/context/DrawingContext";
 
 function App() {
   return (
+    <DrawingProvider> 
      <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -24,6 +26,7 @@ function App() {
         <Route path="/forms" element={<MyForms />} />
       </Routes>
     </BrowserRouter>
+    </DrawingProvider>
   );
 }
 
