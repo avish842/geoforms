@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {APP_NAME , VERSION} from "../constants.js";
+import Menu from "./Menu.jsx";
+import UseDetails from "./UseDetails.jsx";
 
 const Home = () => {
   const [user, setUser] = useState(null);
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,13 +65,27 @@ const Home = () => {
     }
 
   }
+  function Avatar({ name }) {
+
+  const getInitials = (name) => {
+    const words = name.split(" ");
+    const initials = words.map(word => word[0]).join("");
+    return initials.toUpperCase();
+  };
+
+  return (
+    <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold">
+      {getInitials(user.fullName)}
+    </div>
+  );
+}
 
 
   
   return (
     <div className="min-h-screen  bg-white">
       {/* Header */}
-      <header className="bg-white shadow-md py-4 px-4 sm:px-6">
+      <header className="bg-white shadow-md py-4 px-4 sm:px-6 relative">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-indigo-700 flex items-center">
             <img src="/logo.svg" alt="GeoForms Logo" className="h-10 w-10 mr-3" />
@@ -78,7 +95,7 @@ const Home = () => {
             <span className="text-xs text-gray-500 ml-[5px] mt-[20px]">By NITian</span>
           </h1>
 
-          <button className=" border-amber-500" onClick={() => navigate("/forms")}>My Form</button>
+          {/* <button className=" border-amber-500" onClick={() => navigate("/forms")}>My Form</button> */}
 
           <div className="flex items-center space-x-0.5">
             <div >
@@ -92,21 +109,18 @@ const Home = () => {
             {user ? (
             <div className="flex items-center">
               <div className="hidden sm:flex items-center mr-4" onClick={() => navigate('/profile')}>
-                <img 
-                  src={user.photoURL} 
-                  alt={user.displayName} 
-                  className="h-8 w-8 rounded-full border-2 border-indigo-200"
-                  />
+               <Avatar name={user.fullName} />
                 <span className="ml-2 text-gray-700 text-sm font-medium hidden sm:inline">
                   {user.displayName}
                 </span>
               </div>
               <button 
-                onClick={handleLogout}
+                onClick={() => setMenuOpen(!menuOpen)}
                 className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 sm:px-4 py-1 sm:py-2 text-sm rounded-lg transition-all duration-200 border border-indigo-200  cursor-pointer"
                 >
-                Logout
+                ☰
               </button>
+              {menuOpen && <Menu user={user} onLogout={handleLogout} onClose={() => setMenuOpen(false)} />}
             </div>
           ):<div className="flex items-center">
             <button 
@@ -183,9 +197,9 @@ const Home = () => {
           <div className="absolute -bottom-8 -left-8 w-96 h-96 bg-gradient-to-tr from-indigo-100 to-purple-100 rounded-full opacity-20 blur-3xl"></div>
         </div>
       </div>
-      {}
-
-          </div>
+      <UseDetails />
+      
+    </div>
        
       </main>
 
