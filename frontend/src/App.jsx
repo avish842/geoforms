@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./auth/AuthContext";
 import Home from "./pages/Home";
 import RegisterUser from "./pages/RegisterUser";
 import Profile from './pages/Profile';
@@ -13,22 +14,24 @@ import { DrawingProvider } from "./map_comp/context/DrawingContext";
 
 function App() {
   return (
-    <DrawingProvider> 
-     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<RegisterUser />} />
-        <Route path ='/login' element={<Login/>}/>
-        <Route path='/forgot-password' element={<ForgotPassword/>}/>
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/form/:formId/edit" element={<CreateForm />} />
-        <Route path="/form/:formId/fill" element={<FillForm />} />
-        <Route path="/form/:formId/settings" element={<FormSetting />} />
-        <Route path="/form/:formId/responses" element={<Responses />} />
-        <Route path="/forms" element={<MyForms />} />
-      </Routes>
-    </BrowserRouter>
-    </DrawingProvider>
+    <AuthProvider>
+      <DrawingProvider> 
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/register" element={<RegisterUser />} />
+            <Route path ='/login' element={<Login/>}/>
+            <Route path='/forgot-password' element={<ForgotPassword/>}/>
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/form/:formId/edit" element={<CreateForm />} />
+            <Route path="/form/:formId/fill" element={<FillForm />} />
+            <Route path="/form/:formId/settings" element={<FormSetting />} />
+            <Route path="/form/:formId/responses" element={<Responses />} />
+            <Route path="/forms" element={<MyForms />} />
+          </Routes>
+        </BrowserRouter>
+      </DrawingProvider>
+    </AuthProvider>
   );
 }
 

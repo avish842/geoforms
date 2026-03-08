@@ -1,25 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 export const MyForms = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [forms, setForms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!user) {
+            navigate("/login");
+            return;
+        }
+
         const fetchForms = async () => {
             try {
-                // Check if user is logged in first
-                const authRes = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/v1/user/profile`,
-                    { credentials: "include" }
-                );
-                if (!authRes.ok) {
-                    navigate("/login");
-                    return;bb
-                }
-
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/v1/user/forms`,
                     { credentials: "include" }
@@ -37,7 +34,7 @@ export const MyForms = () => {
             }
         };
         fetchForms();
-    }, [navigate]);
+    }, [user, navigate]);
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "—";

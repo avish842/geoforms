@@ -61,7 +61,6 @@ const userSchema = new Schema(
 
     password: {
       type: String,
-      required: [true, "Password is required"],
     },
      refreshToken: {
       type: String,
@@ -131,6 +130,7 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
+  if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
 }
 
@@ -139,7 +139,7 @@ userSchema.methods.encryptPassword = async function (password) {
 }
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next(); // If password is not modified, skip hashing
+  if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });

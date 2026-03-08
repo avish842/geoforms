@@ -1,33 +1,24 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 const Profile = () => {
-
+    const { user, fetchProfile } = useAuth();
+    const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
 
-    useEffect(()=>{
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/profile`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include", // Include cookies for authentication
-                });
-                if (!response.ok) {
-                    throw new Error("Failed to fetch user data");
-                }
-                const data = await response.json();
-                setUserData(data.data);
-                console.log("User Data:", data.data);
-
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-            }
-        };
-
-        fetchUserData();
-    },[]);
+    useEffect(() => {
+        if (!user) {
+            navigate("/login");
+            return;
+        }
+        fetchProfile()
+            .then((data) => {
+                if (data) setUserData(data);
+                else navigate("/login");
+            })
+            .catch(() => navigate("/login"));
+    }, [user, fetchProfile, navigate]);
     return (    
         <div style={{ maxWidth: "500px", margin: "50px auto", padding: "20px" }}>
             <h2 style={{ textAlign: "center", marginBottom: "25px" }}>Profile</h2>

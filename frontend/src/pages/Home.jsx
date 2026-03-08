@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { APP_NAME, VERSION } from "../constants.js";
+import { useAuth } from "../auth/AuthContext";
 import Menu from "./Menu.jsx";
 import UseDetails from "./UseDetails.jsx";
 
@@ -18,45 +19,9 @@ const Avatar = ({ name }) => {
 };
 
 const Home = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/profile`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.data);
-        }
-      } catch (err) {
-        console.log("Not logged in");
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  const handleLogin = () => {
-    navigate("/login");
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-      setUser(null);
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
-  };
 
   const createForm = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/create-form`, {
@@ -120,13 +85,13 @@ const Home = () => {
                   ☰
                 </button>
                 {menuOpen && (
-                  <Menu user={user} onLogout={handleLogout} onClose={() => setMenuOpen(false)} />
+                  <Menu user={user} onLogout={logout} onClose={() => setMenuOpen(false)} />
                 )}
               </div>
             ) : (
               <div className="flex items-center">
                 <button
-                  onClick={handleLogin}
+                  onClick={() => navigate("/login")}
                   className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 sm:px-4 py-1 sm:py-2 rounded-lg transition-all duration-200 border border-indigo-200 cursor-pointer"
                 >
                   Login

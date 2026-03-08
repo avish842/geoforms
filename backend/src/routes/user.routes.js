@@ -1,5 +1,5 @@
 import { upload } from "../middlewares/multer.middleware.js";
-import { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword, googleLogin } from "../controllers/user.controller.js";
 import { createForm, getForm, getFormPublic, updateForm,fetchUserForms } from "../controllers/form.controller.js";
 import { createResponse } from "../controllers/response.controller.js";
 import { getResponses } from "../controllers/response.controller.js";
@@ -21,6 +21,7 @@ router.route("/auth/verify-reset-otp").post(verifyResetOTP); // Verify reset OTP
 router.route("/auth/reset-password").post(resetPassword); // Reset password
 
 router.route("/login").post(loginUser); // Login user route
+router.route("/auth/google").post(googleLogin); // Google login route
 router.route("/logout").post(verifyJWT,logoutUser); // Logout user route
 router.route("/profile").get(verifyJWT,getUserProfile); // Get user profile route  
 

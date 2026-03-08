@@ -12,6 +12,7 @@ const FIELD_TYPES = [
     { value: "email", label: "Email" },
     { value: "date", label: "Date" },
     { value: "file", label: "File Upload" },
+    { value: "live_camera", label: "Live Camera" },
 ];
 
 const OPTION_TYPES = ["multiple choice", "checkbox", "radio"];

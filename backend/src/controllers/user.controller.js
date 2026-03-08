@@ -4,8 +4,17 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import {User} from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { sendOTPEmail } from "../utils/SendOTP.js";
+import { verifyFirebaseToken } from "../utils/firebase.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+
+const isProduction = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+};
 
 
 
@@ -121,15 +130,9 @@ const verifyOTP=asyncHandler(async(req,res)=>{
     const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id);
     const verifiedUser = await User.findById(user._id).select("-password -refreshToken -emailOtp -emailOtpExpiry");
 
-    const Options = {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-    }; 
-
     return res.status(201)
-        .cookie("refreshToken", refreshToken, Options)
-        .cookie("accessToken", accessToken, Options)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .cookie("accessToken", accessToken, cookieOptions)
         .json(
             new ApiResponse(201, {
                 user: verifiedUser,
@@ -154,6 +157,9 @@ const loginUser=asyncHandler(async(req,res)=>{
     if(!user){
         throw new ApiError(404, "User not found");
     }
+    if (!user.password) {
+        throw new ApiError(400, "This account uses Google login. Please sign in with Google.");
+    }
     const isPasswordMatch=await user.isPasswordCorrect(password);
     if(!isPasswordMatch){
         throw new ApiError(401, "Invalid password");
@@ -163,14 +169,9 @@ const loginUser=asyncHandler(async(req,res)=>{
     const {accessToken,refreshToken}=await generateAccessAndRefreshTokens(userId);
     const loggedInUsers=await User.findById(userId).select("-password -refreshToken");
 
-    const Options={
-        httpOnly:true,
-        secure:true,
-        sameSite:"none",
-    }
     res.status(200)
-    .cookie("refreshToken",refreshToken,Options)// Set the refresh token in an HTTP-only se
-    .cookie("accessToken",accessToken,Options)// Set the access token in an HTTP-only secure cookie
+    .cookie("refreshToken",refreshToken,cookieOptions)
+    .cookie("accessToken",accessToken,cookieOptions)
     .json(
         new ApiResponse(200,
             {
@@ -194,15 +195,9 @@ const logoutUser=asyncHandler(async(req,res)=>{
         validateBeforeSave: false
     });
 
-    const Options={
-        httpOnly:true,
-        secure:true,
-        sameSite:"none",
-    }
-
     res.status(200)
-    .clearCookie("refreshToken",Options)
-    .clearCookie("accessToken",Options)
+    .clearCookie("refreshToken",cookieOptions)
+    .clearCookie("accessToken",cookieOptions)
     .json(
         new ApiResponse(200,null,"User logged out successfully")
     );
@@ -305,4 +300,61 @@ const resetPassword = asyncHandler(async (req, res) => {
     );
 });
 
-export { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword };
+const googleLogin = asyncHandler(async (req, res) => {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+        throw new ApiError(400, "Firebase ID token is required");
+    }
+
+    const decoded = await verifyFirebaseToken(idToken);
+    const { email, name, picture, uid } = decoded;
+
+    if (!email) {
+        throw new ApiError(400, "Google account must have an email");
+    }
+
+    let user = await User.findOne({ $or: [{ email }, { googleId: uid }] });
+
+    if (!user) {
+        // Auto-generate a unique username from the email prefix
+        const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+        let username = baseUsername;
+        let counter = 1;
+        while (await User.findOne({ username })) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+        }
+
+        user = await User.create({
+            fullName: name || "Google User",
+            email,
+            username,
+            googleId: uid,
+            avatar: picture || "",
+            isEmailVerified: true,
+        });
+    } else if (!user.googleId) {
+        // Link Google account to existing email-based user
+        user.googleId = uid;
+        if (picture && !user.avatar) user.avatar = picture;
+        user.isEmailVerified = true;
+        await user.save({ validateBeforeSave: false });
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    return res.status(200)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .json(
+            new ApiResponse(200, {
+                user: loggedInUser,
+                accessToken,
+                refreshToken,
+            }, "Google login successful")
+        );
+});
+
+export { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword, googleLogin };

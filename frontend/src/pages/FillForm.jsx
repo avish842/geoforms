@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Camera from "./components/Camera";
 
 
 const FillForm = () => {
-    const { formId } = useParams();
-    const navigate = useNavigate();
+    const { formId } = useParams(); 
+    const navigate = useNavigate(); //-> to redirect after successful submission
 
-    const [form, setForm] = useState(null);
+    const [form, setForm] = useState(null); // form data from backend
     const [answers, setAnswers] = useState({});   // { fieldId: value }
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState(""); // for forms with email domain whitelist, to track email input separately from answers map
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
+    const [submitting, setSubmitting] = useState(false); //-> to track form submission state
+    const [submitted, setSubmitted] = useState(false); // -> to track if form was successfully submitted
     const [error, setError] = useState(null);
-    const [fileUploads, setFileUploads] = useState({});   // { fieldId: attachment }
-    const [uploading, setUploading] = useState({});       // { fieldId: boolean }
+    const [fileUploads, setFileUploads] = useState({});   // { fieldId: attachment } -> to track uploaded files for file fields
+    const [uploading, setUploading] = useState({});       // { fieldId: boolean } -> to track upload state of each file field
 
     // Geofence location gating
     const [locationStatus, setLocationStatus] = useState("idle"); // idle | requesting | granted | denied | unavailable
@@ -149,6 +150,23 @@ const FillForm = () => {
         } finally {
             setUploading((prev) => ({ ...prev, [fieldId]: false }));
         }
+    };
+
+    const handleCameraCapture = async (fieldId, dataUrl) => {
+        if (!dataUrl) {
+            // Photo cleared (retake) — reset state
+            setFileUploads((prev) => { const n = { ...prev }; delete n[fieldId]; return n; });
+            updateAnswer(fieldId, "");
+            return;
+        }
+
+        // Convert base64 data URL to a File object
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `camera_${fieldId}_${Date.now()}.jpg`, { type: "image/jpeg" });
+
+        // Reuse the existing file upload handler
+        await handleFileUpload(fieldId, file);
     };
 
     /* ─── Submit ─── */
@@ -361,6 +379,32 @@ const FillForm = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                                 Uploaded — click to replace
+                            </p>
+                        )}
+                    </div>
+                );
+            case "live_camera":
+                return (
+                    <div className="mt-1">
+                        <Camera
+                            photo={fileUploads[field.id]?.url || null}
+                            setPhoto={(photo) => handleCameraCapture(field.id, photo)}
+                        />
+                        {uploading[field.id] && (
+                            <p className="mt-1.5 text-xs text-indigo-500 flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Uploading photo...
+                            </p>
+                        )}
+                        {fileUploads[field.id] && !uploading[field.id] && (
+                            <p className="mt-1.5 text-xs text-green-500 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Photo captured & uploaded
                             </p>
                         )}
                     </div>
