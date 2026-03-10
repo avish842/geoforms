@@ -7,6 +7,7 @@ import UseDetails from "./UseDetails.jsx";
 
 const Avatar = ({ name }) => {
   const getInitials = (n) => {
+    if (!n) return "?";
     const words = n.split(" ");
     return words.map((word) => word[0]).join("").toUpperCase();
   };
