@@ -25,11 +25,14 @@ app.use(cookieParser())// Parse cookies from incoming requests and make them ava
 
 //routes import  
 import { router } from './routes/user.routes.js';
+import { router as planRouter } from './routes/plan.routes.js';
+import { paymentRouter } from './routes/payment.route.js';
 
 
 //routes declaration
-// middleware for user routes
 app.use('/api/v1/user', router);
+app.use('/api/v1/plan', planRouter);
+app.use('/api/v1/payment',paymentRouter);
 // All user-related routes will be prefixed with /user agar user se shuru hota hai to usko userRoutes se handle karega. 
 
 // http://localhost:5000/api/v1/user/(register or login or any other user related route) will be handled by userRoutes then it will go to user.controller.js file

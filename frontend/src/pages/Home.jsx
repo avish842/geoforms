@@ -7,7 +7,7 @@ import UseDetails from "./UseDetails.jsx";
 
 const Avatar = ({ name }) => {
   const getInitials = (n) => {
-    if (!n) return "?";
+    if (!n) return " ";
     const words = n.split(" ");
     return words.map((word) => word[0]).join("").toUpperCase();
   };
@@ -56,6 +56,12 @@ const Home = () => {
           </h1>
 
           <div className="flex items-center space-x-0.5">
+            <button
+              onClick={() => navigate("/plans")}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 sm:px-4 py-1 sm:py-2 text-sm rounded-lg transition-all duration-200 cursor-pointer mr-2"
+            >
+              Plans
+            </button>
             <div>
               <svg
                 onClick={() => navigate("/contacts")}
