@@ -3,6 +3,7 @@ import cors from 'cors';// Importing CORS middleware to handle Cross-Origin Reso
 import cookieParser from 'cookie-parser';
 
 const app = express();
+const isCorsDebug = process.env.CORS_DEBUG === "true";
 
 const normalizeOrigin = (value) => {
   if (!value) return "";
@@ -26,6 +27,14 @@ app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(s => normalizeOrigin(s)).filter(Boolean) || [];
     const requestOrigin = normalizeOrigin(origin);
+    if (isCorsDebug) {
+      console.log("[CORS]", {
+        origin,
+        requestOrigin,
+        allowedOrigins,
+        matched: allowedOrigins.includes(requestOrigin)
+      });
+    }
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin || allowedOrigins.includes(requestOrigin)) {
       callback(null, true);
