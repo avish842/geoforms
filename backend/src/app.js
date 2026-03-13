@@ -4,11 +4,30 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
+const normalizeOrigin = (value) => {
+  if (!value) return "";
+
+  const trimmed = value.trim().replace(/\/$/, "");
+
+  // If only a hostname is provided in env (e.g. geoforms.in), compare by host.
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return trimmed.replace(/^www\./i, "").toLowerCase();
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.host.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return trimmed.replace(/^www\./i, "").toLowerCase();
+  }
+};
+
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(s => s.trim()) || [];
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(s => normalizeOrigin(s)).filter(Boolean) || [];
+    const requestOrigin = normalizeOrigin(origin);
     // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(requestOrigin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
