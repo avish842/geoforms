@@ -215,6 +215,50 @@ const getUserProfile=asyncHandler(async(req,res)=>{
     )
 
 });
+
+const updateReferralCode = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+    const { referralCode } = req.body;
+
+    if (!referralCode || typeof referralCode !== "string") {
+        throw new ApiError(400, "Referral code is required");
+    }
+
+    const normalizedCode = referralCode.trim().toUpperCase();
+    if (!/^[A-Z0-9]{6,16}$/.test(normalizedCode)) {
+        throw new ApiError(400, "Referral code must be 6-16 characters (A-Z, 0-9)");
+    }
+
+    const currentUser = await User.findById(userId).select("referralCode");
+    if (!currentUser) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (currentUser.referralCode === normalizedCode) {
+        return res.status(200).json(
+            new ApiResponse(200, { referralCode: currentUser.referralCode }, "Referral code is unchanged")
+        );
+    }
+
+    const existingUser = await User.findOne({
+        referralCode: normalizedCode,
+        _id: { $ne: userId },
+    }).select("_id");
+
+    if (existingUser) {
+        throw new ApiError(409, "Referral code already in use");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { referralCode: normalizedCode },
+        { new: true, runValidators: true }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "Referral code updated successfully")
+    );
+});
 const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
@@ -357,4 +401,4 @@ const googleLogin = asyncHandler(async (req, res) => {
         );
 });
 
-export { loginUser, logoutUser, getUserProfile, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword, googleLogin };
+export { loginUser, logoutUser, getUserProfile, updateReferralCode, generateOTP, verifyOTP, forgotPassword, verifyResetOTP, resetPassword, googleLogin };

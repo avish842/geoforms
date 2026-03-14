@@ -2,10 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Profile = () => {
     const { user, fetchProfile } = useAuth();
     const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
+    const [referralCodeInput, setReferralCodeInput] = useState("");
+    const [isEditingReferral, setIsEditingReferral] = useState(false);
+    const [savingCode, setSavingCode] = useState(false);
+    const [codeMessage, setCodeMessage] = useState("");
+    const [codeError, setCodeError] = useState("");
 
     useEffect(() => {
         if (!user) {
@@ -14,11 +21,76 @@ const Profile = () => {
         }
         fetchProfile()
             .then((data) => {
-                if (data) setUserData(data);
+                if (data) {
+                    setUserData(data);
+                    // Keep user edits intact while edit mode is open.
+                    if (!isEditingReferral) {
+                        setReferralCodeInput(data.referralCode || "");
+                    }
+                }
                 else navigate("/login");
             })
             .catch(() => navigate("/login"));
-    }, [user, fetchProfile, navigate]);
+    }, [user, fetchProfile, navigate, isEditingReferral]);
+
+    const handleReferralCodeUpdate = async () => {
+        const normalizedCode = referralCodeInput.trim().toUpperCase();
+        setCodeMessage("");
+        setCodeError("");
+
+        if (!/^[A-Z0-9]{6,16}$/.test(normalizedCode)) {
+            setCodeError("Use 6-16 characters with letters A-Z and numbers 0-9 only.");
+            return;
+        }
+
+        try {
+            setSavingCode(true);
+            const res = await fetch(`${API_URL}/api/v1/user/referral-code`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ referralCode: normalizedCode }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                setCodeError(data?.message || "Failed to update referral code");
+                return;
+            }
+
+            const refreshed = await fetchProfile();
+            if (refreshed) {
+                setUserData(refreshed);
+                setReferralCodeInput(refreshed.referralCode || normalizedCode);
+            } else {
+                setReferralCodeInput(normalizedCode);
+            }
+
+            setCodeMessage(data?.message || "Referral code updated successfully");
+            setIsEditingReferral(false);
+        } catch {
+            setCodeError("Something went wrong while updating referral code");
+        } finally {
+            setSavingCode(false);
+        }
+    };
+
+    const openEditReferral = () => {
+        setCodeMessage("");
+        setCodeError("");
+        setReferralCodeInput(userData?.referralCode || "");
+        setIsEditingReferral(true);
+    };
+
+    const cancelEditReferral = () => {
+        setCodeMessage("");
+        setCodeError("");
+        setReferralCodeInput(userData?.referralCode || "");
+        setIsEditingReferral(false);
+    };
+
     return (    
         <div style={{ maxWidth: "500px", margin: "50px auto", padding: "20px" }}>
             <h2 style={{ textAlign: "center", marginBottom: "25px" }}>Profile</h2>
@@ -63,7 +135,98 @@ const Profile = () => {
                         </div>
                         <div>
                             <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Referral Code</label>
-                            <p style={{ margin: "2px 0 0", fontSize: "15px", fontFamily: "monospace" }}>{userData.referralCode}</p>
+                            <div style={{ marginTop: "2px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                                {!isEditingReferral ? (
+                                    <p style={{ margin: 0, fontSize: "15px", fontFamily: "monospace" }}>{userData.referralCode}</p>
+                                ) : (
+                                    <p style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>Editing referral code</p>
+                                )}
+                                {!isEditingReferral ? (
+                                    <button
+                                        type="button"
+                                        onClick={openEditReferral}
+                                        aria-label="Edit referral code"
+                                        title="Edit referral code"
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            width: "32px",
+                                            height: "32px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #D1D5DB",
+                                            background: "white",
+                                            color: "#4F46E5",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <path d="M12 20h9" />
+                                            <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                        </svg>
+                                    </button>
+                                ) : null}
+                            </div>
+                            {isEditingReferral ? (
+                                <div style={{ marginTop: "10px", display: "flex", gap: "8px", alignItems: "center" }}>
+                                    <input
+                                        type="text"
+                                        value={referralCodeInput}
+                                        onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                                        placeholder="Enter new referral code"
+                                        maxLength={16}
+                                        style={{
+                                            flex: 1,
+                                            padding: "8px 10px",
+                                            border: "1px solid #D1D5DB",
+                                            borderRadius: "6px",
+                                            fontFamily: "monospace",
+                                            fontSize: "14px",
+                                            textTransform: "uppercase",
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleReferralCodeUpdate}
+                                        disabled={savingCode}
+                                        style={{
+                                            padding: "8px 12px",
+                                            borderRadius: "6px",
+                                            border: "none",
+                                            background: savingCode ? "#9CA3AF" : "#4F46E5",
+                                            color: "white",
+                                            cursor: savingCode ? "default" : "pointer",
+                                            fontSize: "13px",
+                                            fontWeight: "600",
+                                        }}
+                                    >
+                                        {savingCode ? "Saving..." : "Save"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={cancelEditReferral}
+                                        disabled={savingCode}
+                                        style={{
+                                            padding: "8px 12px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #D1D5DB",
+                                            background: "white",
+                                            color: "#374151",
+                                            cursor: savingCode ? "default" : "pointer",
+                                            fontSize: "13px",
+                                            fontWeight: "600",
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : null}
+                            {codeError ? (
+                                <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#DC2626" }}>{codeError}</p>
+                            ) : null}
+                            {codeMessage ? (
+                                <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#059669" }}>{codeMessage}</p>
+                            ) : null}
                         </div>
                         <div style={{ display: "flex", gap: "30px" }}>
                             <div>

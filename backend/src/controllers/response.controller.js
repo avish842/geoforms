@@ -7,6 +7,7 @@ import {Response} from "../models/response.model.js";
 import mongoose from "mongoose";
 
 import { Form } from "../models/form.model.js";
+import { getEntitlementForUser } from "../services/subscription.service.js";
 
 
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
@@ -46,6 +47,15 @@ const createResponse= asyncHandler(async (req,res)=>{
         }
         if(form.isActive===false){
             throw new ApiError(403,"Form is not active");
+        }
+
+        const ownerEntitlement = await getEntitlementForUser(form.ownerId);
+        const maxResponses = ownerEntitlement.features?.maxResponses;
+        if (Number.isFinite(maxResponses)) {
+            const totalResponses = await Response.countDocuments({ formId }).session(session);
+            if (totalResponses >= maxResponses) {
+                throw new ApiError(403, `This form reached the plan response limit of ${maxResponses}`);
+            }
         }
 
         // Submission limit validation

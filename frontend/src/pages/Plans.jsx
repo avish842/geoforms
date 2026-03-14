@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Plans = () => {
-  const { user } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +32,8 @@ const Plans = () => {
 
     fetchPlans();
   }, []);
+
+  
 
   const loadScript = (src) => {
     return new Promise((resolve) => {
@@ -67,7 +69,9 @@ const Plans = () => {
 
    
         if (!res.ok) {
-            console.error("Failed to create order");
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Failed to create order", errorData, res);
+          alert(errorData?.message || "Failed to create order");
             return;
         }
         console.log("Order creation response received:", res);
@@ -101,6 +105,7 @@ const Plans = () => {
                 const verifyData = await verifyRes.json();
                 if(verifyRes.ok){
                     console.log("Payment verified successfully:", verifyData);
+                  await fetchProfile();
                     alert("Payment successful and verified!");
                 }
                 else{

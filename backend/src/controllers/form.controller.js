@@ -3,6 +3,7 @@ import {Form} from "../models/form.model.js";
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import {ApiResponse} from "../utils/ApiResponse.js";
+import { getEntitlementForUser } from "../services/subscription.service.js";
 
 const createForm=asyncHandler(async(req,res)=>{
     const {
@@ -15,6 +16,24 @@ const createForm=asyncHandler(async(req,res)=>{
 
     if(!ownerId){
         throw new ApiError(400,"Owner ID is required to create form");
+    }
+
+    const entitlement = req.entitlement || await getEntitlementForUser(ownerId);
+
+    if (!entitlement.isActive) {
+        throw new ApiError(403, "Active subscription required to create forms");
+    }
+
+    const maxForms = entitlement.features?.maxForms;
+    if (Number.isFinite(maxForms)) {
+        const currentFormCount = await Form.countDocuments({ ownerId });
+        if (currentFormCount >= maxForms) {
+            throw new ApiError(403, `Your plan allows only ${maxForms} forms`);
+        }
+    }
+
+    if (settings?.geofence && !entitlement.features?.allowGeofence) {
+        throw new ApiError(403, "Current plan does not allow geofence");
     }
 
     const form = await Form.create({
@@ -75,6 +94,16 @@ const updateForm=asyncHandler(async(req,res)=>{
     const {formId}=req.params;
 
     const {title,description,fields,settings} =req.body;
+
+    const entitlement = req.entitlement || await getEntitlementForUser(req.user._id);
+
+    if (!entitlement.isActive) {
+        throw new ApiError(403, "Active subscription required to update forms");
+    }
+
+    if (settings?.geofence && !entitlement.features?.allowGeofence) {
+        throw new ApiError(403, "Current plan does not allow geofence");
+    }
 
     // Build $set dynamically so we only touch fields that were actually sent
     const updateFields = {};

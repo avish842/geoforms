@@ -4,6 +4,18 @@ import bcrypt from "bcrypt";
 import {nanoid} from 'nanoid';
 import jwt from "jsonwebtoken";
 
+const generateCandidateReferralCode = () => nanoid(8).toUpperCase();
+
+const generateUniqueReferralCode = async () => {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const candidate = generateCandidateReferralCode();
+    const existing = await User.exists({ referralCode: candidate });
+    if (!existing) return candidate;
+  }
+
+  throw new Error("Could not generate unique referral code");
+};
+
 
 
 const userSchema = new Schema(
@@ -75,6 +87,8 @@ const userSchema = new Schema(
       type: String,
       unique: true,
       index: true,
+      trim: true,
+      uppercase: true,
     },
 
     referredBy: {
@@ -100,7 +114,7 @@ const userSchema = new Schema(
     plan: {
       type: String,
       enum: ["free", "basic", "pro"],
-      default: "free",
+      default: "basic",
     },
 
     paymentHistory: [
@@ -124,8 +138,8 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next) {
   if (this.referralCode) return next();
-  
-  this.referralCode = nanoid(8).toUpperCase();
+
+  this.referralCode = await generateUniqueReferralCode();
   next();
 });
 

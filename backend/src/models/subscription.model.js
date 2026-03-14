@@ -9,8 +9,10 @@ const subscriptionSchema = new mongoose.Schema(
       index: true,
     },
 
-    plan: {
-      type: String,
+    
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan",
       required: true,
     },
 
@@ -57,6 +59,9 @@ const subscriptionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+subscriptionSchema.index({ userId: 1, status: 1, expiresAt: -1 });
+subscriptionSchema.index({ userId: 1, planId: 1, status: 1, expiresAt: -1 });
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);
 
