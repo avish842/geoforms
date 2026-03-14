@@ -78,7 +78,7 @@ const Plans = () => {
         console.log("Order created successfully:", order);
 
         const paymentObject= new window.Razorpay({
-            key: process.env.VITE_RAZORPAY_KEY_ID,
+            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
             order_id: order.id,
             amount: order.amount,
             currency: order.currency,
