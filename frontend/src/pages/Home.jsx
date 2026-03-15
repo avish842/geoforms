@@ -25,6 +25,8 @@ const Home = () => {
   const navigate = useNavigate();
 
   const createForm = async () => {
+
+    
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/create-form`, {
       method: "POST",
       credentials: "include",
@@ -32,6 +34,12 @@ const Home = () => {
         "Content-Type": "application/json",
       },
     });
+
+   if(res.status === 403){
+      alert("Please upgrade your plan to create more forms or access this feature.");
+      navigate("/plans");
+      return;
+    }
 
     const data = await res.json();
     if (res.ok) {

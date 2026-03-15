@@ -18,7 +18,7 @@ const MapsComp = () => {
       <DrawingExample >
 
       </DrawingExample>
-      <AreaData/>    
+      {/* <AreaData/>     */}
     </APIProvider>
   );
 };

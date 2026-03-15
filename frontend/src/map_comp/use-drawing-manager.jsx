@@ -31,7 +31,7 @@ export function useDrawingManager(initialValue = null) {
       drawingMode: google.maps.drawing.OverlayType.CIRCLE,
       drawingControl: true,
       drawingControlOptions: {
-        position: google.maps.ControlPosition.TOP_CENTER,
+        position: google.maps.ControlPosition.BOTTOM_RIGHT,
         drawingModes: [
           google.maps.drawing.OverlayType.CIRCLE,
           google.maps.drawing.OverlayType.POLYGON,
