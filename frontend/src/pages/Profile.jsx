@@ -91,162 +91,162 @@ const Profile = () => {
         setIsEditingReferral(false);
     };
 
-    return (    
-        <div style={{ maxWidth: "500px", margin: "50px auto", padding: "20px" }}>
-            <h2 style={{ textAlign: "center", marginBottom: "25px" }}>Profile</h2>
+    const planColors = {
+        free: "bg-gray-100 text-gray-600",
+        pro: "bg-indigo-100 text-indigo-700",
+        enterprise: "bg-amber-100 text-amber-700",
+    };
 
-            {!userData ? (
-                <p style={{ textAlign: "center" }}>Loading...</p>
-            ) : (
-                <div style={{ border: "1px solid #e0e0e0", borderRadius: "8px", padding: "20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", paddingBottom: "15px", borderBottom: "1px solid #e0e0e0" }}>
-                        <div style={{
-                            width: "60px", height: "60px", borderRadius: "50%",
-                            backgroundColor: "#4F46E5", color: "white",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: "24px", fontWeight: "bold", marginRight: "15px"
-                        }}>
-                            {userData.fullName?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <h3 style={{ margin: 0 }}>{userData.fullName}</h3>
-                            <span style={{
-                                fontSize: "12px", padding: "2px 8px", borderRadius: "10px",
-                                backgroundColor: userData.role === "admin" ? "#EF4444" : "#6B7280",
-                                color: "white", marginTop: "4px", display: "inline-block"
-                            }}>
-                                {userData.role}
-                            </span>
-                        </div>
+    const planBadge = planColors[userData?.plan] || "bg-gray-100 text-gray-600";
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-10 px-4">
+            <div className="max-w-2xl mx-auto space-y-6">
+                {/* Home Button */}
+                <button
+                    onClick={() => navigate("/")}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    Home
+                </button>
+
+                {!userData ? (
+                    <div className="flex items-center justify-center py-24">
+                        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                     </div>
+                ) : (
+                    <>
+                        {/* Profile Card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            {/* Cover gradient */}
+                            <div className="h-24 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-400" />
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <div>
-                            <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Username</label>
-                            <p style={{ margin: "2px 0 0", fontSize: "15px" }}>@{userData.username}</p>
+                            {/* Avatar + name */}
+                            <div className="px-6 pb-6">
+                                <div className="flex items-end gap-4 -mt-10 mb-4">
+                                    <div className="w-20 h-20 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-3xl font-bold shadow-lg ring-4 ring-white">
+                                        {userData.fullName?.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="mb-1 flex-1">
+                                        <h2 className="text-xl font-bold text-gray-900 leading-tight">{userData.fullName}</h2>
+                                        <p className="text-sm text-gray-500">@{userData.username}</p>
+                                    </div>
+                                    <div className="mb-1 flex gap-2 flex-wrap justify-end">
+                                        <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${planBadge}`}>
+                                            {userData.plan} plan
+                                        </span>
+                                        <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${userData.role === "admin" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"}`}>
+                                            {userData.role}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Info grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Email</p>
+                                        <p className="text-sm text-gray-800 font-medium break-all">{userData.email}</p>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Member Since</p>
+                                        <p className="text-sm text-gray-800 font-medium">
+                                            {new Date(userData.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Email</label>
-                            <p style={{ margin: "2px 0 0", fontSize: "15px" }}>{userData.email}</p>
+
+                        {/* Referral Stats */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+                                <p className="text-3xl font-bold text-indigo-600">{userData.totalReferrals ?? 0}</p>
+                                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Total Referrals</p>
+                            </div>
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+                                <p className="text-3xl font-bold text-emerald-600">{userData.paidReferrals ?? 0}</p>
+                                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Paid Referrals</p>
+                            </div>
                         </div>
-                        <div>
-                            <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Plan</label>
-                            <p style={{ margin: "2px 0 0", fontSize: "15px", textTransform: "capitalize" }}>{userData.plan}</p>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Referral Code</label>
-                            <div style={{ marginTop: "2px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-                                {!isEditingReferral ? (
-                                    <p style={{ margin: 0, fontSize: "15px", fontFamily: "monospace" }}>{userData.referralCode}</p>
-                                ) : (
-                                    <p style={{ margin: 0, fontSize: "12px", color: "#6B7280" }}>Editing referral code</p>
-                                )}
-                                {!isEditingReferral ? (
+
+                        {/* Referral Code Card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Your Referral Code</p>
+                                    {!isEditingReferral && (
+                                        <p className="text-2xl font-mono font-bold text-indigo-700 mt-1 tracking-widest">
+                                            {userData.referralCode}
+                                        </p>
+                                    )}
+                                </div>
+                                {!isEditingReferral && (
                                     <button
                                         type="button"
                                         onClick={openEditReferral}
                                         aria-label="Edit referral code"
-                                        title="Edit referral code"
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            width: "32px",
-                                            height: "32px",
-                                            borderRadius: "6px",
-                                            border: "1px solid #D1D5DB",
-                                            background: "white",
-                                            color: "#4F46E5",
-                                            cursor: "pointer",
-                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
                                     >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M12 20h9" />
                                             <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                                         </svg>
+                                        Edit
                                     </button>
-                                ) : null}
+                                )}
                             </div>
-                            {isEditingReferral ? (
-                                <div style={{ marginTop: "10px", display: "flex", gap: "8px", alignItems: "center" }}>
+
+                            {isEditingReferral && (
+                                <div className="space-y-3">
                                     <input
                                         type="text"
                                         value={referralCodeInput}
                                         onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
                                         placeholder="Enter new referral code"
                                         maxLength={16}
-                                        style={{
-                                            flex: 1,
-                                            padding: "8px 10px",
-                                            border: "1px solid #D1D5DB",
-                                            borderRadius: "6px",
-                                            fontFamily: "monospace",
-                                            fontSize: "14px",
-                                            textTransform: "uppercase",
-                                        }}
+                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={handleReferralCodeUpdate}
-                                        disabled={savingCode}
-                                        style={{
-                                            padding: "8px 12px",
-                                            borderRadius: "6px",
-                                            border: "none",
-                                            background: savingCode ? "#9CA3AF" : "#4F46E5",
-                                            color: "white",
-                                            cursor: savingCode ? "default" : "pointer",
-                                            fontSize: "13px",
-                                            fontWeight: "600",
-                                        }}
-                                    >
-                                        {savingCode ? "Saving..." : "Save"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={cancelEditReferral}
-                                        disabled={savingCode}
-                                        style={{
-                                            padding: "8px 12px",
-                                            borderRadius: "6px",
-                                            border: "1px solid #D1D5DB",
-                                            background: "white",
-                                            color: "#374151",
-                                            cursor: savingCode ? "default" : "pointer",
-                                            fontSize: "13px",
-                                            fontWeight: "600",
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleReferralCodeUpdate}
+                                            disabled={savingCode}
+                                            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {savingCode ? "Saving..." : "Save Changes"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={cancelEditReferral}
+                                            disabled={savingCode}
+                                            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
-                            ) : null}
-                            {codeError ? (
-                                <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#DC2626" }}>{codeError}</p>
-                            ) : null}
-                            {codeMessage ? (
-                                <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#059669" }}>{codeMessage}</p>
-                            ) : null}
+                            )}
+
+                            {codeError && (
+                                <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    {codeError}
+                                </p>
+                            )}
+                            {codeMessage && (
+                                <p className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14l-4-4 1.41-1.41L10 13.17l6.59-6.59L18 8l-8 8z"/></svg>
+                                    {codeMessage}
+                                </p>
+                            )}
                         </div>
-                        <div style={{ display: "flex", gap: "30px" }}>
-                            <div>
-                                <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Total Referrals</label>
-                                <p style={{ margin: "2px 0 0", fontSize: "15px" }}>{userData.totalReferrals}</p>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Paid Referrals</label>
-                                <p style={{ margin: "2px 0 0", fontSize: "15px" }}>{userData.paidReferrals}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600" }}>Member Since</label>
-                            <p style={{ margin: "2px 0 0", fontSize: "15px" }}>
-                                {new Date(userData.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }           

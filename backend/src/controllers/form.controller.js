@@ -93,7 +93,7 @@ const getFormPublic=asyncHandler(async(req,res)=>{
 const updateForm=asyncHandler(async(req,res)=>{
     const {formId}=req.params;
 
-    const {title,description,fields,settings} =req.body;
+    const {title,description,fields,settings,isActive} =req.body;
 
     const entitlement = req.entitlement || await getEntitlementForUser(req.user._id);
 
@@ -110,6 +110,7 @@ const updateForm=asyncHandler(async(req,res)=>{
     if (title !== undefined)       updateFields.title = title;
     if (description !== undefined) updateFields.description = description;
     if (fields !== undefined)      updateFields.fields = fields;
+    if (isActive !== undefined)    updateFields.isActive = Boolean(isActive);
 
     // Merge settings with dot-notation so partial updates don't wipe sibling keys
     if (settings) {
