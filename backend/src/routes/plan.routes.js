@@ -8,6 +8,6 @@ const router = Router();
 
 
 router.route("/create-plan").post(verifyJWT,createPlan); // Create plan route
-router.route("/plans").get(verifyJWT,getPlans); // Get plans route
+router.route("/plans").get(getPlans); // Get plans route
 
 export {router};

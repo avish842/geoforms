@@ -10,6 +10,8 @@ const Plans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [paymentReady, setPaymentReady] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -46,81 +48,107 @@ const Plans = () => {
   }
 
   useEffect(() => {
-    loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    loadScript("https://checkout.razorpay.com/v1/checkout.js").then((ok) => {
+      setPaymentReady(ok);
+    });
   }, []);
 
-  const onPayment=async (planId) => {
+  const onPayment = async (planId) => {
     console.log("Initiating payment for plan:", planId);
 
-    const options = {
-        
-        planId: planId,
-    };
-
-   try {
-        const res = await fetch(`${API_URL}/api/v1/payment/create-order`, {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(options),
-        });
-
-   
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          console.error("Failed to create order", errorData, res);
-          alert(errorData?.message || "Failed to create order");
-            return;
-        }
-        console.log("Order creation response received:", res);
-
-        const data= await res.json();
-        const order = data.data;
-        
-        console.log("Order created successfully:", order);
-
-        const paymentObject= new window.Razorpay({
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-            order_id: order.id,
-            amount: order.amount,
-            currency: order.currency,
-            handler: async function(response){
-                console.log("Payment successful:", response);
-                const options2 = {
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature,
-                }
-
-                const verifyRes = await fetch(`${API_URL}/api/v1/payment/verify-payment`, {
-                    method: "POST",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(options2),
-                });
-                const verifyData = await verifyRes.json();
-                if(verifyRes.ok){
-                    console.log("Payment verified successfully:", verifyData);
-                  await fetchProfile();
-                    alert("Payment successful and verified!");
-                }
-                else{
-                    console.error("Payment verification failed:", verifyData);
-                    alert("Payment verification failed. Please contact support.");
-                }
-            }
-        }) 
-        paymentObject.open(); 
-    } catch(error){
-        console.error("Payment initiation failed:", error);
-    
+    if (!paymentReady || !window.Razorpay) {
+      alert("Payment is loading. Please try again in a moment.");
+      return;
     }
 
-}
+    const options = {
+      planId: planId,
+    };
+
+    try {
+      setPaying(true);
+      const res = await fetch(`${API_URL}/api/v1/payment/create-order`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(options),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to create order", errorData, res);
+        alert(errorData?.message || "Failed to create order");
+        setPaying(false);
+        return;
+      }
+      console.log("Order creation response received:", res);
+
+      const data = await res.json();
+      const order = data.data;
+
+      console.log("Order created successfully:", order);
+
+      const paymentObject = new window.Razorpay({
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        handler: async function (response) {
+          console.log("Payment successful:", response);
+          const options2 = {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          };
+
+          try {
+            const verifyRes = await fetch(`${API_URL}/api/v1/payment/verify-payment`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(options2),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok) {
+              console.log("Payment verified successfully:", verifyData);
+              await fetchProfile();
+              alert("Payment successful and verified!");
+              navigate("/profile");
+            } else {
+              console.error("Payment verification failed:", verifyData);
+              alert(verifyData?.message || "Payment verification failed. Please contact support.");
+            }
+          } catch (err) {
+            console.error("Payment verification error:", err);
+            alert("Could not verify payment. Please contact support.");
+          } finally {
+            setPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+          },
+        },
+      });
+
+      paymentObject.on("payment.failed", function (response) {
+        console.error("Payment failed:", response);
+        alert(response?.error?.description || "Payment failed. Please try again.");
+        setPaying(false);
+      });
+
+      paymentObject.open();
+    } catch (error) {
+      console.error("Payment initiation failed:", error);
+      alert("Could not start payment. Please try again.");
+      setPaying(false);
+    }
+  };
 
   if (loading) {
     return (

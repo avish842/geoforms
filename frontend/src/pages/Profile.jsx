@@ -127,7 +127,7 @@ const Profile = () => {
 
                             {/* Avatar + name */}
                             <div className="px-6 pb-6">
-                                <div className="flex items-end gap-4 -mt-10 mb-4">
+                                <div className="flex items-end gap-4 -mt-6 mb-4">
                                     <div className="w-20 h-20 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-3xl font-bold shadow-lg ring-4 ring-white">
                                         {userData.fullName?.charAt(0).toUpperCase()}
                                     </div>

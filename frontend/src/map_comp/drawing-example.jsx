@@ -80,7 +80,7 @@ const DrawingExample = () => {
     <>
       {initialCenter && userLocation ? (
         <Map
-          style={{ width: '100%', height: '85%' }}
+          style={{ width: '100%', height: '85%', }}
           defaultZoom={20}
           defaultCenter={initialCenter}
           gestureHandling={'greedy'}
@@ -88,6 +88,7 @@ const DrawingExample = () => {
           keyboardShortcuts={false}
           mapTypeControlStyle={0}
           mapTypeId="hybrid"
+          
         >
           <PlacesSearchControl />
 

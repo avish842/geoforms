@@ -2,6 +2,13 @@
 	"actionButtons": {
 		"commands": [
 			{
+				"name": "🧹",
+				"command": "Start-Process powershell; Get-Process powershell | Where-Object { $_.Id -ne $PID } | Stop-Process -Force",
+				"singleInstance": true,
+				"focus": true,
+				"color": "yellow"
+			},
+			{
 				"name":"Frontend 🧑‍💻",
 				"command":"cd .\\frontend\\; npm run dev",
 				"singleInstance": true,
@@ -14,7 +21,8 @@
 				"singleInstance": true,
 				"focus": true,
 				"color": "magenta"
-			}
+			},
+
 		],
 		"defaultColor": "white",
 		"loadNpmCommands": false,

@@ -11,6 +11,7 @@ import { MyForms } from "./pages/Forms";
 import FormSetting from "./pages/FormSetting";
 import Responses from "./pages/Responses";
 import Plans from "./pages/Plans";
+import SuperAdmin from "./pages/SuperAdmin";
 import { DrawingProvider } from "./map_comp/context/DrawingContext";
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
             <Route path="/form/:formId/responses" element={<Responses />} />
             <Route path="/forms" element={<MyForms />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/superadmin" element={<SuperAdmin />} />
           </Routes>
         </BrowserRouter>
       </DrawingProvider>
