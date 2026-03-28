@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Camera from "./components/Camera";
+import  MapsCompFill  from "../map_comp/MapsCompFill";
 
 
 const FillForm = () => {
@@ -548,6 +549,16 @@ const FillForm = () => {
                         </div>
                     )}
                 </div>
+                {
+                    isGeofenced&& (
+                        <div>
+                            <MapsCompFill
+                                userLocation={userLocation}
+                                geofence={form?.settings?.geofence}
+                            />
+                        </div>
+                    )
+                }
 
                 {/* ── Fields ── */}
                 {form.fields.map((field) => (

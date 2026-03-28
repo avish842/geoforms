@@ -57,6 +57,7 @@ const FormSetting = () => {
                 const data = await res.json();
                 if (res.ok && data.data) {
                     setForm(data.data);
+
                     setSettings({
                         emailDomainWhitelist: data.data.settings?.emailDomainWhitelist || [],
                         submissionLimitPerUser: data.data.settings?.submissionLimitPerUser ?? null,
@@ -231,6 +232,9 @@ const FormSetting = () => {
     const clearFence = () => {
         updateSetting("geofence", { type: null, coordinates: [], radius: null });
     };
+
+
+
 
     /* ─── Loading ─── */
     if (loading) {
