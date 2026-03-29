@@ -8,16 +8,15 @@ import AreaData from './AreaData';
 
 
 
-const MapsComp = () => {
+const MapsComp = ( { userLocation, geofence } ) => {
   
   return (
     <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
         {/* <h1>Welcome to Google maps</h1> */}
      
         
-      <DrawingExample >
+      <DrawingExample userLocation={userLocation} geofence={geofence}/>
 
-      </DrawingExample>
       {/* <AreaData/>     */}
     </APIProvider>
   );

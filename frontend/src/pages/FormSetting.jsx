@@ -302,7 +302,10 @@ const FormSetting = () => {
                 {/* ── Geofence Settings ── */}
                 <Section title="Geofence Settings">
                     <div className="w-full h-[500px] rounded-md overflow-hidden">
-                        <MapsComp />
+                        <MapsComp 
+                             userLocation={userLocation}
+                                geofence={form?.settings?.geofence}
+                        />
                     </div>  
                 </Section>
 

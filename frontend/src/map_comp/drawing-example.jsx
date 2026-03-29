@@ -12,9 +12,75 @@ import {UndoRedoControl} from './undo-redo-control';
 import {useDrawingManager} from './use-drawing-manager';
 import {useDrawingContext} from './context/DrawingContext';
 
+const GeofenceOverlay = ({geofence}) => {
+  const map = useMap();
+  const overlayRef = useRef(null);
 
+  useEffect(() => {
+    if (!map || !geofence?.type) return;
 
-const DrawingExample = () => {
+    if (overlayRef.current) {
+      overlayRef.current.setMap(null);
+      overlayRef.current = null;
+    }
+
+    if (geofence.type === 'Point' && Array.isArray(geofence.coordinates) && geofence.coordinates.length === 2) {
+      const [lng, lat] = geofence.coordinates;
+      const center = {lat, lng};
+
+      const circle = new google.maps.Circle({
+        map,
+        center,
+        radius: Number(geofence.radius) || 0,
+        strokeColor: '#2563eb',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#60a5fa',
+        fillOpacity: 0.2,
+        clickable: false
+      });
+
+      overlayRef.current = circle;
+      const bounds = circle.getBounds();
+      if (bounds) map.fitBounds(bounds);
+    }
+
+    if (geofence.type === 'Polygon' && Array.isArray(geofence.coordinates?.[0])) {
+      const ring = geofence.coordinates[0]
+        .filter((point) => Array.isArray(point) && point.length >= 2)
+        .map(([lng, lat]) => ({lat, lng}));
+
+      if (ring.length >= 3) {
+        const polygon = new google.maps.Polygon({
+          map,
+          paths: ring,
+          strokeColor: '#2563eb',
+          strokeOpacity: 0.9,
+          strokeWeight: 2,
+          fillColor: '#60a5fa',
+          fillOpacity: 0.2,
+          clickable: false
+        });
+
+        overlayRef.current = polygon;
+        const bounds = new google.maps.LatLngBounds();
+        ring.forEach((point) => bounds.extend(point));
+        map.fitBounds(bounds);
+      }
+    }
+
+    return () => {
+      if (overlayRef.current) {
+        overlayRef.current.setMap(null);
+        overlayRef.current = null;
+      }
+    };
+  }, [map, geofence]);
+
+  return null;
+};
+
+const DrawingExample = ( { geofence } ) => {
   const drawingManager = useDrawingManager();
   const { userLocation } = useDrawingContext();
   
@@ -91,6 +157,7 @@ const DrawingExample = () => {
           
         >
           <PlacesSearchControl />
+          <GeofenceOverlay geofence={geofence} />
 
           <Marker
             position={userLocation}
