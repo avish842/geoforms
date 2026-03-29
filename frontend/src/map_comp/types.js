@@ -42,7 +42,8 @@ export const DrawingActionKind = {
   SET_OVERLAY: 'SET_OVERLAY',
   UPDATE_OVERLAYS: 'UPDATE_OVERLAYS',
   UNDO: 'UNDO',
-  REDO: 'REDO'
+  REDO: 'REDO',
+  CLEAR_OVERLAYS: 'CLEAR_OVERLAYS'
   
   
 };

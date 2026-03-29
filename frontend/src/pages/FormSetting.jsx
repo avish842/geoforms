@@ -1,7 +1,8 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MapsComp from "../map_comp/MapsComp";
 import { useDrawingContext } from "../map_comp/context/DrawingContext";
+import { DrawingActionKind } from "../map_comp/types";
 
 
 const Section = ({ title, children }) => (
@@ -44,7 +45,7 @@ const FormSetting = () => {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState(null);
-    const { state,userLocation } = useDrawingContext();
+    const { state, dispatch, userLocation } = useDrawingContext();
  
     /* ─── Fetch form ─── */
     useEffect(() => {
@@ -160,7 +161,7 @@ const FormSetting = () => {
                     method: "PATCH",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ settings }),
+                    body: JSON.stringify({ settings, isActive: form?.isActive }),
                 }
             );
             const data = await res.json();
@@ -231,10 +232,8 @@ const FormSetting = () => {
 
     const clearFence = () => {
         updateSetting("geofence", { type: null, coordinates: [], radius: null });
+        dispatch({ type: DrawingActionKind.CLEAR_OVERLAYS });
     };
-
-
-
 
     /* ─── Loading ─── */
     if (loading) {
@@ -295,7 +294,9 @@ const FormSetting = () => {
                         label="Form is active"
                         description="When disabled, the form will not accept new submissions."
                         checked={form.isActive}
-                        onChange={(val) => setForm((prev) => ({ ...prev, isActive: val }))}
+                        onChange={(checked) =>
+                            setForm((prev) => ({ ...prev, isActive: checked }))
+                        }
                     />
                 </Section>
 
@@ -303,10 +304,19 @@ const FormSetting = () => {
                 <Section title="Geofence Settings">
                     <div className="w-full h-[500px] rounded-md overflow-hidden">
                         <MapsComp 
-                             userLocation={userLocation}
-                                geofence={form?.settings?.geofence}
+                            userLocation={userLocation}
+                            geofence={settings?.geofence}
                         />
-                    </div>  
+                    </div>
+                    <div className="mt-3">
+                        <button
+                            type="button"
+                            onClick={clearFence}
+                            className="text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
+                        >
+                            Clear boundary
+                        </button>
+                    </div>
                 </Section>
 
                 {/* ── Email Domain Whitelist ── */}

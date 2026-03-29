@@ -94,6 +94,13 @@ const updateForm=asyncHandler(async(req,res)=>{
     const {formId}=req.params;
 
     const {title,description,fields,settings,isActive} =req.body;
+    const gf = settings?.geofence;
+    const isValidGeofence = !!(
+        gf &&
+        gf.type &&
+        gf.coordinates &&
+        !(Array.isArray(gf.coordinates) && gf.coordinates.length === 0)
+    );
 
     const entitlement = req.entitlement || await getEntitlementForUser(req.user._id);
 
@@ -101,12 +108,13 @@ const updateForm=asyncHandler(async(req,res)=>{
         throw new ApiError(403, "Active subscription required to update forms");
     }
 
-    if (settings?.geofence && !entitlement.features?.allowGeofence) {
+    if (isValidGeofence && !entitlement.features?.allowGeofence) {
         throw new ApiError(403, "Current plan does not allow geofence");
     }
 
     // Build $set dynamically so we only touch fields that were actually sent
     const updateFields = {};
+    const unsetFields = {};
     if (title !== undefined)       updateFields.title = title;
     if (description !== undefined) updateFields.description = description;
     if (fields !== undefined)      updateFields.fields = fields;
@@ -115,13 +123,12 @@ const updateForm=asyncHandler(async(req,res)=>{
     // Merge settings with dot-notation so partial updates don't wipe sibling keys
     if (settings) {
         if (settings.geofence !== undefined) {
-            const gf = settings.geofence;
-            // Strip empty/invalid geofence so the 2dsphere index isn't triggered on junk
-            if (gf && gf.type && gf.coordinates &&
-                !(Array.isArray(gf.coordinates) && gf.coordinates.length === 0)) {
-                updateFields["settings.geofence"] = gf;
+            // Strip empty/invalid geofence so the 2dsphere index isn't triggered on junk.
+            // Use $unset to actually remove existing geofence from MongoDB.
+            if (isValidGeofence) {
+                updateFields["settings.geofence"] = settings.geofence;
             } else {
-                updateFields["settings.geofence"] = undefined; // clear it
+                unsetFields["settings.geofence"] = 1;
             }
         }
         if (settings.emailDomainWhitelist !== undefined)
@@ -136,12 +143,24 @@ const updateForm=asyncHandler(async(req,res)=>{
             updateFields["settings.allowedFileTypes"] = settings.allowedFileTypes;
     }
 
+    const updateOps = {};
+    if (Object.keys(updateFields).length) {
+        updateOps.$set = updateFields;
+    }
+    if (Object.keys(unsetFields).length) {
+        updateOps.$unset = unsetFields;
+    }
+
+    if (!Object.keys(updateOps).length) {
+        throw new ApiError(400, "No valid fields provided to update");
+    }
+
     const form=await Form.findOneAndUpdate(
         {
             _id:formId,
             ownerId:req.user._id
         },
-        { $set: updateFields },
+        updateOps,
         {
             new:true,
             runValidators:true

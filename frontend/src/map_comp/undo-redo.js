@@ -115,6 +115,18 @@ export default function reducer(state, action) {
         future: [...state.future].slice(0, -1)
       };
     }
+
+    case DrawingActionKind.CLEAR_OVERLAYS: {
+      for (const overlay of state.now) {
+        overlay.geometry.setMap(null);
+      }
+
+      return {
+        past: [],
+        now: [],
+        future: []
+      };
+    }
   }
 }
 
