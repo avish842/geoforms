@@ -10,7 +10,7 @@ const Header = () => {
           <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
             {APP_NAME}
           </span>
-          <span className="text-xs text-gray-500 ml-1 mt-5">By NI dsdsTian ee</span>
+          <span className="text-xs text-gray-500 ml-1 mt-5">By NITian</span>
         </h1>
 
         <div className="flex items-center space-x-0.5">
