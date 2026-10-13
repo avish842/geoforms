@@ -1,8 +1,25 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 const RegisterUser = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { fetchProfile } = useAuth();
+
+  const getDestination = () => {
+    const fromState = location.state?.from;
+    if (typeof fromState === "string") return fromState;
+    if (fromState && typeof fromState === "object" && fromState.pathname) {
+      return `${fromState.pathname}${fromState.search || ""}${fromState.hash || ""}`;
+    }
+    const fromQuery = new URLSearchParams(location.search).get("redirect");
+    if (fromQuery) return fromQuery;
+    return "/";
+  };
+
+  const destination = getDestination();
+
   const [step, setStep] = useState("register"); // "register" | "otp"
   const [formData, setFormData] = useState({
     fullName: "",
@@ -87,7 +104,15 @@ const RegisterUser = () => {
         throw new Error(data.message || "OTP verification failed");
       }
 
-      navigate("/");
+      if (fetchProfile) {
+        try {
+          await fetchProfile();
+        } catch {
+          // ignore profile fetch error
+        }
+      }
+
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -270,7 +295,17 @@ const RegisterUser = () => {
       )}
 
       <p style={{ textAlign: "center", marginTop: "15px" }}>
-        Already have an account? <Link to="/">Sign in</Link>
+        Already have an account?{" "}
+        <Link
+          to={
+            destination !== "/"
+              ? `/login?redirect=${encodeURIComponent(destination)}`
+              : "/login"
+          }
+          state={{ from: destination }}
+        >
+          Sign in
+        </Link>
       </p>
     </div>
   );

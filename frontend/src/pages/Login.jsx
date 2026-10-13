@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const GoogleIcon = () => (
@@ -25,13 +25,35 @@ const GoogleIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle } = useAuth();
+  const location = useLocation();
+  const { user, login, loginWithGoogle } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Determine destination URL
+  const getDestination = () => {
+    const fromState = location.state?.from;
+    if (typeof fromState === "string") return fromState;
+    if (fromState && typeof fromState === "object" && fromState.pathname) {
+      return `${fromState.pathname}${fromState.search || ""}${fromState.hash || ""}`;
+    }
+    const fromQuery = new URLSearchParams(location.search).get("redirect");
+    if (fromQuery) return fromQuery;
+    return "/";
+  };
+
+  const destination = getDestination();
+
+  // If user is already logged in, redirect them directly
+  useEffect(() => {
+    if (user) {
+      navigate(destination, { replace: true });
+    }
+  }, [user, destination, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +67,7 @@ const Login = () => {
 
     try {
       await login(identifier.trim(), password);
-      navigate("/");
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -59,7 +81,7 @@ const Login = () => {
 
     try {
       await loginWithGoogle();
-      navigate("/");
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || "Google sign-in failed. Please try again.");
     } finally {
@@ -76,7 +98,9 @@ const Login = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome To GeoForms</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to continue to your account
+            {destination.startsWith("/form/")
+              ? "Sign in to access and fill this form"
+              : "Sign in to continue to your account"}
           </p>
         </div>
 
@@ -176,7 +200,12 @@ const Login = () => {
         <p className="mt-6 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
           <Link
-            to="/register"
+            to={
+              destination !== "/"
+                ? `/register?redirect=${encodeURIComponent(destination)}`
+                : "/register"
+            }
+            state={{ from: destination }}
             className="font-semibold text-indigo-600 hover:text-indigo-500"
           >
             Create an account

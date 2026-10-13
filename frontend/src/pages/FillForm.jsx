@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Camera from "./components/Camera";
-import  MapsCompFill  from "../map_comp/MapsCompFill";
+import MapsCompFill from "../map_comp/MapsCompFill";
+import { useAuth } from "../auth/AuthContext";
 
 
 const FillForm = () => {
-    const { formId } = useParams(); 
+    const { formId } = useParams();
     const navigate = useNavigate(); //-> to redirect after successful submission
-
+    const location = useLocation();
+    const { user, loading: authLoading } = useAuth();
     const [form, setForm] = useState(null); // form data from backend
     const [answers, setAnswers] = useState({});   // { fieldId: value }
     const [email, setEmail] = useState(""); // for forms with email domain whitelist, to track email input separately from answers map
@@ -23,14 +25,32 @@ const FillForm = () => {
     const [userLocation, setUserLocation] = useState(null);
     const isGeofenced = !!(form?.settings?.geofence?.type);
 
-    /* ─── Fetch form on mount ─── */
+    /* ─── Auth Check & Fetch Form ─── */
     useEffect(() => {
+        // 1. Wait until initial session check finishes
+        if (authLoading) return;
+
+        // 2. If not logged in, redirect to login with current link preserved
+        if (!user) {
+            const returnUrl = location.pathname + location.search;
+            navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`, {
+                state: { from: returnUrl },
+                replace: true,
+            });
+            return;
+        }
+
+        // 3. User is logged in: fetch the form
+        let isMounted = true;
         const fetchForm = async () => {
+            setLoading(true);
             try {
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/v1/user/form/${formId}/public`
                 );
                 const data = await res.json();
+                if (!isMounted) return;
+
                 if (res.ok && data.data) {
                     setForm(data.data);
                     // initialise answers map
@@ -40,17 +60,31 @@ const FillForm = () => {
                         else initial[f.id] = "";
                     });
                     setAnswers(initial);
+
+                    // Pre-fill email if user is logged in and form uses email domain whitelist
+                    if (user?.email) {
+                        setEmail((prev) => prev || user.email);
+                    }
                 } else {
                     setError(data.message || "Form not found");
                 }
             } catch {
-                setError("Could not load the form. Please try again.");
+                if (isMounted) {
+                    setError("Could not load the form. Please try again.");
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
+
         fetchForm();
-    }, [formId]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [formId, user, authLoading, location.pathname, location.search, navigate]);
 
     /* ─── Geofence: request location as soon as form loads ─── */
     useEffect(() => {
@@ -222,6 +256,12 @@ const FillForm = () => {
             const data = await res.json();
             if (res.ok) {
                 setSubmitted(true);
+            } else if (res.status === 401) {
+                setError("Your session expired. Please sign in again.");
+                const returnUrl = location.pathname + location.search;
+                navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`, {
+                    state: { from: returnUrl },
+                });
             } else {
                 setError(data.message || "Submission failed");
             }
@@ -330,13 +370,12 @@ const FillForm = () => {
                     <div className="mt-1">
                         <label
                             htmlFor={`file-input-${field.id}`}
-                            className={`border-2 border-dashed rounded-lg py-6 flex flex-col items-center gap-2 transition-all cursor-pointer ${
-                                uploading[field.id]
+                            className={`border-2 border-dashed rounded-lg py-6 flex flex-col items-center gap-2 transition-all cursor-pointer ${uploading[field.id]
                                     ? "border-yellow-300 bg-yellow-50/50 text-yellow-500 pointer-events-none"
                                     : fileUploads[field.id]
-                                    ? "border-green-300 bg-green-50/50 text-green-500 hover:border-green-400"
-                                    : "border-blue-200 text-neutral-400 hover:border-blue-400 hover:bg-blue-50/50"
-                            }`}
+                                        ? "border-green-300 bg-green-50/50 text-green-500 hover:border-green-400"
+                                        : "border-blue-200 text-neutral-400 hover:border-blue-400 hover:bg-blue-50/50"
+                                }`}
                         >
                             {uploading[field.id] ? (
                                 <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
@@ -361,8 +400,8 @@ const FillForm = () => {
                                 {uploading[field.id]
                                     ? "Uploading..."
                                     : fileUploads[field.id]
-                                    ? fileUploads[field.id].filename
-                                    : "Upload file"}
+                                        ? fileUploads[field.id].filename
+                                        : "Upload file"}
                             </span>
 
                             <input
@@ -423,6 +462,20 @@ const FillForm = () => {
                 );
         }
     };
+
+    /* ─── Auth Checking / Redirecting State ─── */
+    if (authLoading || !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-3 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-neutral-500 text-sm font-medium">
+                        {authLoading ? "Checking authentication..." : "Redirecting to login..."}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     /* ─── Loading ─── */
     if (loading) {
@@ -550,7 +603,7 @@ const FillForm = () => {
                     )}
                 </div>
                 {
-                    isGeofenced&& (
+                    isGeofenced && (
                         <div>
                             <MapsCompFill
                                 userLocation={userLocation}
