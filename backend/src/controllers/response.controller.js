@@ -249,6 +249,7 @@ const getResponses = asyncHandler(async (req, res) => {
     const responses = await Response.find({ formId })
         .sort({ createdAt: -1 })
         .populate("attachments")
+        .populate("submitterId", "fullName email username avatar")
         .lean();
 
     return res.status(200).json(
